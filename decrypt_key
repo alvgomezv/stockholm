@@ -1,0 +1,28 @@
+#!/goinfre/alvgomez/miniconda3/envs/42cyber-alvgomez/bin/python
+
+import argparse
+import os
+from OpenSSL import crypto
+from cryptography.fernet import Fernet
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import PKCS1_v1_5
+
+
+def asymetric_decrypt(emsg, private_key):
+        sentinel = get_random_bytes(16)
+        cipher = PKCS1_v1_5.new(private_key)
+        dmsg = cipher.decrypt(emsg, sentinel)
+        return dmsg.decode()
+
+if __name__ == "__main__":
+    try:
+        with open("key_encrypted", 'rb') as f:
+            enc_data = f.read()
+        with open("private_key.pem", 'rb') as f:
+            private_key = RSA.import_key(f.read())
+        dec_data = asymetric_decrypt(enc_data, private_key)
+        with open('key_decrypted.pem', 'wb') as f:
+            f.write(dec_data.encode())
+    except:
+         print("No encrypted key found")

